@@ -53,8 +53,6 @@ func main() {
 		log.Fatalf("Error adding admin rights to user: %s", err)
 	}
 
-	//m := middleware.NewKeycloakAuth(client, id, secret, conf.Keycloak)
-
 	// handlers
 
 	api.SystemGetHealthHandler = handlers.Health()
@@ -66,7 +64,7 @@ func main() {
 	}
 	api.APIAuthorizer = authZ
 
-	middleware.SetupOauth(api, id, secret)
+	middleware.SetupOauth(api, id, secret, conf.Keycloak.Realm)
 	api.Init()
 	server := restapi.NewServer(api)
 

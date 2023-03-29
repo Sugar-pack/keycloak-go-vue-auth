@@ -118,10 +118,34 @@ func (k *KeycloakSetupService) setupNewRealmClient(token string) (*gocloak.Clien
 
 func (k *KeycloakSetupService) createClient(token string) (*gocloak.Client, error) {
 	newClient := gocloak.Client{
-		ClientID:                  &k.conf.ClientName,
-		Name:                      &k.conf.ClientName,
-		DirectAccessGrantsEnabled: pointers.ToPtr(true),
-		ServiceAccountsEnabled:    pointers.ToPtr(true),
+		ClientID:                     &k.conf.ClientName,
+		Name:                         &k.conf.ClientName,
+		DirectAccessGrantsEnabled:    pointers.ToPtr(true),
+		ServiceAccountsEnabled:       pointers.ToPtr(true),
+		AuthorizationServicesEnabled: pointers.ToPtr(true),
+		RedirectURIs: pointers.ToPtr([]string{
+			"http://localhost:8082/api/v1/callback", // TODO: make it configurable
+		}),
+		Attributes: pointers.ToPtr(
+			map[string]string{
+				"oauth2.device.authorization.grant.enabled": "true", // TODO: make it constant
+			}),
+		AuthorizationSettings: &gocloak.ResourceServerRepresentation{
+			Scopes: &[]gocloak.ScopeRepresentation{
+				{
+					Name: pointers.ToPtr(http.MethodGet),
+				},
+				{
+					Name: pointers.ToPtr(http.MethodPost),
+				},
+				{
+					Name: pointers.ToPtr(http.MethodPut),
+				},
+				{
+					Name: pointers.ToPtr(http.MethodDelete),
+				},
+			},
+		},
 	}
 	id, err := k.client.CreateClient(k.ctx, token, k.conf.Realm, newClient)
 	if err != nil {

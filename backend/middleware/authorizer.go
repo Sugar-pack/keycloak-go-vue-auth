@@ -33,7 +33,7 @@ type keycloakEvaluator struct {
 	tokenUrl   string
 }
 
-func (e *keycloakEvaluator) evaluate(accessToken, realm, clientID, clientSecret, resourceName, scope string) (bool, error) {
+func (e *keycloakEvaluator) evaluate(accessToken, tokenURL, clientID, clientSecret, resourceName, scope string) (bool, error) {
 	data := []byte(fmt.Sprintf("grant_type=urn:ietf:params:oauth:grant-type:uma-ticket&subject_token=%s&permission=%s#%s&response_mode=decision&audience=%s", accessToken, resourceName, scope, clientID))
 	request, err := http.NewRequest(http.MethodPost, tokenURL, bytes.NewBuffer(data))
 	if err != nil {
@@ -60,8 +60,9 @@ func (a *Authorizer) Authorize(request *http.Request, auth interface{}) error {
 	}
 	ctx := context.Background()
 	url := request.URL.String()
+	verb := request.Method
 
-	resourceName, scope, err := a.getResourceScopeByUrl(ctx, url)
+	resourceName, scope, err := a.getResourceScopeByUrl(ctx, url, verb)
 	if err != nil {
 		return errors.New(http.StatusForbidden, "resource not found")
 	}
@@ -75,7 +76,7 @@ func (a *Authorizer) Authorize(request *http.Request, auth interface{}) error {
 	return nil
 }
 
-func (a *Authorizer) getResourceScopeByUrl(ctx context.Context, url string) (string, string, error) {
+func (a *Authorizer) getResourceScopeByUrl(ctx context.Context, url, verb string) (string, string, error) {
 	jwt, err := a.keycloakClient.LoginClient(ctx, a.clientID, a.clientSecret, a.realm)
 	if err != nil {
 		return "", "", err
@@ -100,7 +101,9 @@ func (a *Authorizer) getResourceScopeByUrl(ctx context.Context, url string) (str
 					if scope.Name == nil {
 						return "", "", fmt.Errorf("scope name is nil")
 					}
-					return *resource.Name, *scope.Name, nil
+					if *scope.Name == verb {
+						return *resource.Name, *scope.Name, nil
+					}
 				}
 			}
 		}
@@ -136,7 +139,7 @@ func NewKeycloakAuth(keycloakClient *gocloak.GoCloak, adminUser, adminPassword, 
 		clientSecret:   *client.Secret,
 		realm:          realm,
 		token:          token.AccessToken,
-		clientID:       clientID,
+		clientID:       clientId,
 		evaluator:      &keycloakEvaluator{httpClient: http.DefaultClient, tokenUrl: fmt.Sprintf("%s/realms/%s/protocol/openid-connect/token", "http://localhost:8080", realm)},
 	}, nil
 }

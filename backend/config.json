@@ -1,7 +1,7 @@
 {
   "Keycloak": {
     "Url": "http://localhost:8080",
-    "Realm": "test",
+    "Realm": "test-3",
     "AdminUser": "admin",
     "AdminPassword": "Pa55w0rd",
     "ClientName": "test"
