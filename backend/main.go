@@ -7,9 +7,10 @@ import (
 	"github.com/Nerzal/gocloak/v13"
 	"github.com/go-openapi/loads"
 
-	"test_iam/config"
 	"test_iam/generated/swagger/restapi"
 	"test_iam/generated/swagger/restapi/operations"
+
+	"test_iam/config"
 	"test_iam/handlers"
 	"test_iam/middleware"
 	"test_iam/realm"
@@ -52,18 +53,20 @@ func main() {
 		log.Fatalf("Error adding admin rights to user: %s", err)
 	}
 
-	m := middleware.NewKeycloakAuth(client, id, secret, conf.Keycloak)
+	//m := middleware.NewKeycloakAuth(client, id, secret, conf.Keycloak)
 
 	// handlers
-	api.UserGetUserRolesHandler = handlers.UserRoles()
-	api.BearerAuth = m.ParseToken
-	api.APIAuthorizer = m
 
-	auth := handlers.NewKeycloakAuth(client, id, secret, conf.Keycloak.Realm)
-	api.AuthLoginHandler = auth.Login()
-	api.AuthRefreshHandler = auth.Refresh()
 	api.SystemGetHealthHandler = handlers.Health()
+	api.UserGetUserRolesHandler = handlers.UserRoles()
 
+	authZ, err := middleware.NewKeycloakAuth(client, conf.Keycloak.AdminUser, conf.Keycloak.AdminPassword, conf.Keycloak.ClientName, conf.Keycloak.Realm)
+	if err != nil {
+		log.Fatalf("Error creating authZ: %s", err)
+	}
+	api.APIAuthorizer = authZ
+
+	middleware.SetupOauth(api, id, secret)
 	api.Init()
 	server := restapi.NewServer(api)
 

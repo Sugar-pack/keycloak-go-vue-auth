@@ -7,7 +7,7 @@ import (
 )
 
 func Health() system.GetHealthHandlerFunc {
-	return func(params system.GetHealthParams) middleware.Responder {
+	return func(params system.GetHealthParams, a interface{}) middleware.Responder {
 		return system.NewGetHealthOK()
 	}
 }

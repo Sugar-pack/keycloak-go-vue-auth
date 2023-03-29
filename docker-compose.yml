@@ -51,8 +51,10 @@ services:
     build:
       context: ./backend/
       dockerfile: Dockerfile
+    environment:
+      OAUTH2_REDIRECT_URL: http://localhost:8082/api/v1/callback
     ports:
-      - "8082:8080"
+      - "8082:8082"
     restart:
       on-failure
     networks:

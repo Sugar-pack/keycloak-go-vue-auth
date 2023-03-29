@@ -6,11 +6,22 @@ info:
 schemes:
   - http
 securityDefinitions:
-  Bearer:
-    type: apiKey
-    name: Authorization
-    in: header
-basePath: /api/v1
+  OauthSecurity:
+    type: oauth2
+    flow: accessCode
+    authorizationUrl: 'http://localhost:8080/realms/test/protocol/openid-connect/auth'
+    tokenUrl: 'http://localhost:8080/realms/test/protocol/openid-connect/token'
+basePath: '/api/v1'
+host: localhost:8082
+security:
+  - OauthSecurity: [ ]
+tags:
+  - name: System
+    description: System endpoints
+  - name: User
+    description: User endpoints
+  - name: Auth
+    description: Auth endpoints
 paths:
   /health:
     get:
@@ -26,51 +37,39 @@ paths:
           schema:
             $ref: "#/definitions/Error"
   /login:
-    post:
-      description: Login
+    get:
       tags:
         - Auth
-      operationId: Login
-      consumes:
-        - "application/json"
-      parameters:
-        - name: 'login'
-          in: 'body'
-          required: true
-          description: 'Login Payload'
-          schema:
-            $ref: '#/definitions/LoginInfo'
+      summary: login through oauth2 server
+      security: [ ]
       responses:
-        200:
-          description: Success
+        '200':
+          description: login
           schema:
-            $ref: "#/definitions/TokenPair"
+            properties:
+              access_token:
+                type: string
+                format: string
         default:
-          description: Unexpected error.
+          description: error
           schema:
             $ref: "#/definitions/Error"
-  /refresh:
-    post:
-      description: Refresh token
+  /callback:
+    get:
       tags:
         - Auth
-      operationId: Refresh
-      consumes:
-        - "application/json"
-      parameters:
-        - name: 'refresh'
-          in: 'body'
-          required: true
-          description: 'Refresh Payload'
-          schema:
-            $ref: '#/definitions/RefreshToken'
+      summary: return access_token
+      security: [ ]
       responses:
-        200:
-          description: Success
+        '200':
+          description: login
           schema:
-            $ref: "#/definitions/TokenPair"
+            properties:
+              access_token:
+                type: string
+                format: string
         default:
-          description: Unexpected error.
+          description: error
           schema:
             $ref: "#/definitions/Error"
 
@@ -80,8 +79,6 @@ paths:
       tags:
         - User
       operationId: GetUserRoles
-      security:
-        - Bearer: []
       responses:
         200:
           description: Success
@@ -115,6 +112,9 @@ definitions:
   AccessToken:
     type: string
   RefreshToken:
+    type: string
+
+  principal:
     type: string
 
   Error:
